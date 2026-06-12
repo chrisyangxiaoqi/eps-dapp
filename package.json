@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "worker": "tsx worker/index.ts",
+    "worker:once": "DRAIN_AND_EXIT=1 tsx worker/index.ts",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest",

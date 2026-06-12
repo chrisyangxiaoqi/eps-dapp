@@ -7,4 +7,8 @@ export type {
   ChainDeliveryResult,
   DeliverParams,
 } from "@/lib/chain/types";
-export { SolanaAdapter, getSolanaAdapter } from "@/lib/chain/solana";
+export {
+  SolanaAdapter,
+  getSolanaAdapter,
+  getRentExemptMinimum,
+} from "@/lib/chain/solana";

@@ -16,6 +16,20 @@ import type {
 } from "@/lib/chain/types";
 
 /**
+ * Reject any RPC endpoint that targets Solana mainnet-beta (CLAUDE.md hard
+ * rule #2). The check is a substring match on the URL ("mainnet") —
+ * deliberately broad so neither the public `api.mainnet-beta.solana.com` nor a
+ * private mainnet RPC slips through. Shared by the adapter constructor and the
+ * standalone reads below so every web3.js handle in this module is guarded.
+ * @throws {Error} `"Mainnet RPC forbidden"` if the URL targets mainnet.
+ */
+function assertNotMainnetUrl(rpcUrl: string): void {
+  if (rpcUrl.toLowerCase().includes("mainnet")) {
+    throw new Error("Mainnet RPC forbidden");
+  }
+}
+
+/**
  * Solana implementation of {@link ChainAdapter} (T-301).
  *
  * The v1 anchor delivery is `SystemProgram.transfer(rent-exempt min)` plus a
@@ -46,9 +60,7 @@ export class SolanaAdapter implements ChainAdapter {
    * @throws {Error} `"Mainnet RPC forbidden"` if the URL targets mainnet.
    */
   assertNotMainnet(): void {
-    if (this.rpcUrl.toLowerCase().includes("mainnet")) {
-      throw new Error("Mainnet RPC forbidden");
-    }
+    assertNotMainnetUrl(this.rpcUrl);
   }
 
   /**
@@ -109,4 +121,22 @@ export function getSolanaAdapter(): SolanaAdapter {
 
   const signer = Keypair.fromSecretKey(bs58.decode(secretBase58));
   return new SolanaAdapter(rpcUrl, signer);
+}
+
+/**
+ * Read the rent-exempt minimum (lamports) for a zero-data account from the
+ * configured cluster — the v1 anchor transfer amount (see T-302). Kept in this
+ * module so the worker can size the transfer without importing `@solana/web3.js`
+ * directly (CLAUDE.md: "all chain calls behind lib/chain"); the mainnet guard
+ * runs before any connection is opened (hard rule #2).
+ */
+export async function getRentExemptMinimum(): Promise<bigint> {
+  const rpcUrl = process.env.SOLANA_RPC_URL;
+  if (!rpcUrl) {
+    throw new Error("SOLANA_RPC_URL is not set");
+  }
+  assertNotMainnetUrl(rpcUrl);
+
+  const connection = new Connection(rpcUrl, "finalized");
+  return BigInt(await connection.getMinimumBalanceForRentExemption(0));
 }
