@@ -22,5 +22,4 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          claude_args: "--max-turns 50"
+          claude_args: "--max-turns 50 --allowedTools 'Edit,Write,Read,Bash(git:*),Bash(pnpm:*),Bash(find:*),Bash(cat:*),Bash(ls:*)'"
