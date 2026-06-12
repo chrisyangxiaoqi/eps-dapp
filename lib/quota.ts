@@ -1,5 +1,14 @@
+import type { PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { Tier } from "@/lib/stripe";
+
+/**
+ * The subset of Prisma's client this module needs. Both the top-level
+ * `PrismaClient` and an interactive-transaction client (`tx` inside
+ * `prisma.$transaction`) satisfy it, so quota can be consumed standalone or as
+ * part of a larger atomic unit of work (see `lib/intake.ts`).
+ */
+export type QuotaDbClient = Pick<PrismaClient, "subscription">;
 
 /**
  * Per-period quota (number of fulfilments allowed) for each subscription tier.
@@ -60,11 +69,19 @@ function nextPeriodEnd(from: Date): Date {
  *    tier limit. If the limit is already reached, {@link QuotaExceededError} is
  *    thrown and nothing is mutated.
  *
+ * Pass a transaction client as `db` to consume quota inside a larger
+ * `prisma.$transaction` — the decrement then rolls back with the rest of the
+ * unit of work if any later step fails (see `lib/intake.ts`, T-205). Defaults
+ * to the shared `prisma` client when called standalone.
+ *
  * @throws {NoActiveSubscriptionError} if the org has no ACTIVE subscription.
  * @throws {QuotaExceededError} if the period's quota is exhausted.
  */
-export async function checkAndDecrementQuota(orgId: string): Promise<QuotaResult> {
-  const subscription = await prisma.subscription.findFirst({
+export async function checkAndDecrementQuota(
+  orgId: string,
+  db: QuotaDbClient = prisma,
+): Promise<QuotaResult> {
+  const subscription = await db.subscription.findFirst({
     where: { status: "ACTIVE", organization: { clerkOrgId: orgId } },
     orderBy: { periodEnd: "desc" },
   });
@@ -83,7 +100,7 @@ export async function checkAndDecrementQuota(orgId: string): Promise<QuotaResult
   // Period rollover: the elapsed period's meter resets to 0, and this call is
   // the first unit of the new period (usageCount -> 1).
   if (now > subscription.periodEnd) {
-    await prisma.subscription.update({
+    await db.subscription.update({
       where: { id: subscription.id },
       data: { usageCount: 1, periodStart: now, periodEnd: nextPeriodEnd(now) },
     });
@@ -93,7 +110,7 @@ export async function checkAndDecrementQuota(orgId: string): Promise<QuotaResult
   // Atomic conditional increment: only succeeds while under the limit. The
   // `where` guard makes this safe against concurrent consumers — at most `limit`
   // increments can ever win.
-  const { count } = await prisma.subscription.updateMany({
+  const { count } = await db.subscription.updateMany({
     where: { id: subscription.id, usageCount: { lt: limit } },
     data: { usageCount: { increment: 1 } },
   });
