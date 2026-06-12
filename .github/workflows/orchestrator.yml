@@ -1,0 +1,49 @@
+name: Phase Orchestrator
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  advance:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Create next task issue
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const md = fs.readFileSync('docs/PHASES.md', 'utf8');
+            let next = null;
+            for (const row of md.split('\n')) {
+              if (/\|\s*T-\d+\s*\|/.test(row) && row.includes('NOT STARTED')) {
+                const c = row.split('|').map(s => s.trim()).filter(Boolean);
+                if (c.length >= 3) { next = {id:c[0], desc:c[1], ac:c[2]}; break; }
+              }
+            }
+            if (!next) { console.log('All tasks complete!'); return; }
+            const p = 'P' + (next.id.match(/T-(\d)/)?.[1] ?? '0');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `${p} ${next.id}: ${next.desc.slice(0,72)}`,
+              body: [
+                `@claude Please complete task ${next.id} from \`docs/PHASES.md\`.`,
+                '', '## Task', next.desc, '',
+                '## Acceptance criteria', next.ac, '',
+                '## Instructions',
+                '- Follow `CLAUDE.md` build rules and hard constraints',
+                '- Reference `docs/EPS_SOW_v1.1.md` for full product spec',
+                '- Update `docs/PHASES.md` in the same commit: set Status=DONE, add commit SHA',
+                '- One task at a time — do not start the next task',
+                '', '*Auto-triggered by Phase Orchestrator.*'
+              ].join('\n')
+            });
