@@ -12,9 +12,15 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./", import.meta.url)),
     },
   },
+  // tsconfig.json uses `jsx: "preserve"` for Next's compiler, which tells the
+  // bundler to leave JSX untransformed. The unit suite renders server
+  // components (e.g. the public notice page) via react-dom/server, so override
+  // to the automatic runtime just for tests. Vitest 4 transforms with oxc, so
+  // the override goes here (the `esbuild` option is ignored under oxc).
+  oxc: { jsx: { runtime: "automatic" } },
   test: {
     environment: "node",
-    include: ["**/*.test.ts"],
+    include: ["**/*.test.ts", "**/*.test.tsx"],
     exclude: ["**/node_modules/**", "**/.next/**", "tests/integration/**"],
   },
 });
