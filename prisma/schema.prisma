@@ -107,7 +107,23 @@ model ServiceRequest {
   failureReason   String?
   createdAt       DateTime      @default(now())
 
-  /// First-access records (T-402). At most one row exists per notice (the
+
+  // ENS fields (Phase 2)
+  ensDisplayName     String?   // e.g. "defendant.eth"
+  agentENSName       String?   // e.g. "eps-agent.eth"
+
+  // Hedera fields (Phase 3)
+  hcsTopicId         String?
+  hcsSequenceNumber  Int?
+  hcsConsensusTime   String?
+  hcsTxId            String?
+  hcsMirrorUrl       String?
+  htsTokenId         String?
+  htsSerialNumber    Int?
+  htsTxId            String?
+  htsMirrorUrl       String?
+
+    /// First-access records (T-402). At most one row exists per notice (the
   /// `noticeId` unique constraint makes recording the first view idempotent).
   access          NoticeAccess?
   /// Certificate "First Viewed" addendum (T-402), written alongside the first

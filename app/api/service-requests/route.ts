@@ -11,6 +11,7 @@ import {
   QuotaExceededError,
   NoActiveSubscriptionError,
 } from "@/lib/quota";
+import { resolveENS, getAgentENSName } from "@/lib/ens/ENSResolver";
 
 /**
  * Server-side validation schema for a service-request intake. Mirrors the
@@ -76,16 +77,42 @@ export async function POST(req: Request): Promise<Response> {
   }
   const input = parsed.data;
 
-  // (2) Recipient wallet must be a real, on-curve Solana account (not a PDA).
-  try {
-    assertValidRecipient(input.recipientWallet);
-  } catch (err) {
-    if (err instanceof InvalidRecipientError) {
+  // (2a) ENS resolution — handle ENS names and EVM addresses before Solana validation.
+  const recipientInput = input.recipientWallet;
+  let resolvedWallet = recipientInput;
+  let ensDisplayName: string | null = null;
+  let agentENSName: string | null = null;
+
+  // If it looks like an ENS name (contains a dot, not a plain IP), resolve it
+  if (recipientInput.includes('.') && !recipientInput.match(/^[0-9.]+$/)) {
+    const ensResult = await resolveENS(recipientInput);
+    if (ensResult.wasENSName && !ensResult.address) {
       return NextResponse.json(
-        { error: err.message, reason: err.reason }, { status: 400 },
+        { error: `ENS name "${recipientInput}" does not resolve to a wallet address.` },
+        { status: 400 },
       );
     }
-    throw err;
+    if (ensResult.address) {
+      resolvedWallet = ensResult.address;
+      ensDisplayName = ensResult.displayName !== ensResult.address ? ensResult.displayName : null;
+    }
+  }
+  agentENSName = await getAgentENSName();
+
+  // (2b) Recipient wallet must be a real, on-curve Solana account (not a PDA),
+  //      OR a valid EVM address (0x...). EVM/ENS addresses skip Solana validation.
+  const isEvmAddress = /^0x[0-9a-fA-F]{40}$/.test(resolvedWallet);
+  if (!isEvmAddress) {
+    try {
+      assertValidRecipient(resolvedWallet);
+    } catch (err) {
+      if (err instanceof InvalidRecipientError) {
+        return NextResponse.json(
+          { error: err.message, reason: err.reason }, { status: 400 },
+        );
+      }
+      throw err;
+    }
   }
 
   // (3) Consume quota BEFORE creating the record. A missing/exhausted plan is a
@@ -112,10 +139,12 @@ export async function POST(req: Request): Promise<Response> {
       caseCaption: input.caseCaption,
       plaintiffName: input.plaintiffName,
       defendantName: input.defendantName,
-      recipientWallet: input.recipientWallet,
+      recipientWallet: resolvedWallet,
       courtOrderFlag: input.courtOrderFlag,
       attestedAt: new Date(),
       status: "STAGED",
+      ensDisplayName,
+      agentENSName,
     },
     select: { id: true, status: true },
   });

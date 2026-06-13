@@ -1,5 +1,6 @@
 import { buildServiceMemo, getRentExemptMinimum, getSolanaAdapter } from "@/lib/chain";
 import type { ClaimableRequest, WorkerDb } from "@/worker/index";
+import { recordOnHedera } from "@/lib/hedera/HederaService";
 
 /**
  * Thrown when the finalized on-chain memo does not match the memo we intended to
@@ -107,4 +108,32 @@ export async function processServiceRequest(
       blockTime: blockTime === null ? null : new Date(blockTime * 1000),
     },
   });
+
+  // Non-blocking Hedera recording: HCS timestamp + HTS NFT receipt (Phase 3).
+  // Failures are logged but never throw — they must not block delivery confirmation.
+  recordOnHedera({
+    deliveryId:   row.id,
+    documentHash: row.documentSha256 ?? "",
+    caseRef:      row.caseCaption,
+    servedTo:     row.recipientWallet,
+    servedBy:     (row as { agentENSName?: string }).agentENSName ?? process.env.EVM_APP_WALLET_ADDRESS ?? "eps-agent",
+  }).then(async (result) => {
+    const updates: Record<string, unknown> = {};
+    if (result.hcs) {
+      updates.hcsTopicId        = result.hcs.topicId;
+      updates.hcsSequenceNumber = result.hcs.sequenceNumber;
+      updates.hcsConsensusTime  = result.hcs.consensusTimestamp;
+      updates.hcsTxId           = result.hcs.transactionId;
+      updates.hcsMirrorUrl      = result.hcs.mirrorNodeUrl;
+    }
+    if (result.hts) {
+      updates.htsTokenId      = result.hts.tokenId;
+      updates.htsSerialNumber = result.hts.serialNumber;
+      updates.htsTxId         = result.hts.transactionId;
+      updates.htsMirrorUrl    = result.hts.mirrorNodeUrl;
+    }
+    if (Object.keys(updates).length > 0) {
+      await db.serviceRequest.update({ where: { id: row.id }, data: updates });
+    }
+  }).catch(err => console.error("[worker] Hedera non-fatal error:", err));
 }

@@ -35,7 +35,13 @@
     "react-dom": "19.2.7",
     "resend": "^6.12.4",
     "stripe": "^22.2.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "viem": "^2.21.0",
+    "@ensdomains/ensjs": "^4.0.2",
+    "@hashgraph/sdk": "^2.62.0",
+    "@hashgraph/hedera-agent-kit": "^4.0.0",
+    "@dynamic-labs-wallet/node": "^1.0.0",
+    "@dynamic-labs/sdk-api": "^3.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
