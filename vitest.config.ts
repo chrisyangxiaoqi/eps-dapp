@@ -20,6 +20,9 @@ export default defineConfig({
   oxc: { jsx: { runtime: "automatic" } },
   test: {
     environment: "node",
+    // Stub env vars (DATABASE_URL, RESEND_API_KEY, …) so modules that validate
+    // the environment at import time load under the unit suite (T-508).
+    setupFiles: ["./test/setup-env.ts"],
     include: ["**/*.test.ts", "**/*.test.tsx"],
     exclude: ["**/node_modules/**", "**/.next/**", "tests/integration/**"],
   },

@@ -1,0 +1,33 @@
+# Gitleaks configuration for EPS (T-508).
+#
+# Extends the bundled default ruleset and allowlists the NON-SECRET stub /
+# placeholder values used across CI env blocks, the unit-test env setup, and
+# the `.env.example` files. Hard rule #1 forbids real secrets in the repo, so
+# everything here is a documented placeholder — never a live credential.
+#
+# Used by the `secret-scan` CI job via `gitleaks detect --config .gitleaks.toml`
+# (also auto-detected at the repo root by gitleaks-action).
+title = "EPS gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Non-secret STUB placeholders used in CI, tests, and examples"
+regexTarget = "line"
+regexes = [
+  # Universal placeholder used for every stubbed secret in CI/test env blocks.
+  '''STUB_NOT_A_SECRET''',
+  # Stub Postgres DSN used by the unit suite and CI (no real host/credentials).
+  '''postgresql://stub:stub@''',
+  # Deliberately-invalid live key used by a negative test that asserts rejection.
+  '''sk_live_should_be_rejected''',
+]
+paths = [
+  # Env stub setup + example env files contain only placeholder values.
+  '''test/setup-env\.ts''',
+  '''\.env\.example''',
+  '''\.env\.staging\.example''',
+  # Docs reference truncated/example key shapes (e.g. `sk_test_…`), never secrets.
+  '''(^|/)docs/.*''',
+]
