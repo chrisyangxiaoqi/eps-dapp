@@ -41,7 +41,7 @@
     "@hashgraph/sdk": "^2.62.0",
     "@hashgraph/hedera-agent-kit": "^4.0.0",
     "@dynamic-labs-wallet/node": "^1.0.0",
-    "@dynamic-labs/sdk-api": "^3.0.0"
+    "@dynamic-labs/sdk-api": "^0.0.1045"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
