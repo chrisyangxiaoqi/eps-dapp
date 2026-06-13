@@ -116,7 +116,7 @@ export async function processServiceRequest(
     documentHash: row.documentSha256 ?? "",
     caseRef:      row.caseCaption,
     servedTo:     row.recipientWallet,
-    servedBy:     (row as { agentENSName?: string }).agentENSName ?? process.env.EVM_APP_WALLET_ADDRESS ?? "eps-agent",
+    servedBy:     row.agentENSName ?? process.env.EVM_APP_WALLET_ADDRESS ?? "eps-agent",
   }).then(async (result) => {
     const updates: Record<string, unknown> = {};
     if (result.hcs) {

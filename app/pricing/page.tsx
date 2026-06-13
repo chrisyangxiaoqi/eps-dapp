@@ -43,9 +43,15 @@ const TIERS: TierCard[] = [
   },
 ];
 
+type PaymentTab = "card" | "crypto";
+
 export default function PricingPage() {
   const [loadingTier, setLoadingTier] = useState<Tier | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [paymentTab, setPaymentTab] = useState<PaymentTab>("card");
+  const [cryptoLoading, setCryptoLoading] = useState(false);
+  const [cryptoError, setCryptoError] = useState<string | null>(null);
+  const [cryptoUrl, setCryptoUrl] = useState<string | null>(null);
 
   async function subscribe(tier: Tier) {
     setError(null);
@@ -70,6 +76,40 @@ export default function PricingPage() {
     }
   }
 
+  async function getCryptoPaymentLink(tier: Tier) {
+    setCryptoError(null);
+    setCryptoUrl(null);
+    setCryptoLoading(true);
+    // Map tiers to cent amounts matching Stripe prices
+    const amountMap: Record<Tier, number> = { tier1: 20000, tier2: 60000, tier3: 100000 };
+    try {
+      const res = await fetch("/api/payments/flow-session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          deliveryId: `pricing-${tier}-${Date.now()}`,
+          amountCents: amountMap[tier],
+          email: "",
+        }),
+      });
+      if (res.status === 503) {
+        setCryptoError("Crypto payments temporarily unavailable. Please pay with card.");
+        return;
+      }
+      const data: { paymentUrl?: string; error?: string } = await res.json();
+      if (!res.ok || !data.paymentUrl) {
+        setCryptoError(data.error ?? "Could not create crypto payment link. Please pay with card.");
+        return;
+      }
+      setCryptoUrl(data.paymentUrl);
+      window.location.assign(data.paymentUrl);
+    } catch {
+      setCryptoError("Crypto payments temporarily unavailable. Please pay with card.");
+    } finally {
+      setCryptoLoading(false);
+    }
+  }
+
   return (
     <main className="mx-auto flex min-h-screen max-w-5xl flex-col items-center gap-8 px-6 py-16">
       <header className="flex flex-col items-center gap-2 text-center">
@@ -80,9 +120,48 @@ export default function PricingPage() {
         </p>
       </header>
 
+      {/* Payment method tabs */}
+      <div className="flex gap-1 rounded-lg border border-foreground/15 p-1">
+        <button
+          type="button"
+          onClick={() => { setPaymentTab("card"); setError(null); setCryptoError(null); setCryptoUrl(null); }}
+          className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
+            paymentTab === "card"
+              ? "bg-foreground text-background"
+              : "text-foreground/60 hover:text-foreground"
+          }`}
+        >
+          Pay with Card
+        </button>
+        <button
+          type="button"
+          onClick={() => { setPaymentTab("crypto"); setError(null); }}
+          className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
+            paymentTab === "crypto"
+              ? "bg-foreground text-background"
+              : "text-foreground/60 hover:text-foreground"
+          }`}
+        >
+          Pay with Crypto
+        </button>
+      </div>
+
       {error ? (
         <p role="alert" className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">
           {error}
+        </p>
+      ) : null}
+
+      {cryptoError ? (
+        <p role="alert" className="rounded-md bg-red-50 px-4 py-2 text-sm text-red-700">
+          {cryptoError}
+        </p>
+      ) : null}
+
+      {cryptoUrl ? (
+        <p className="rounded-md bg-green-50 px-4 py-2 text-sm text-green-700">
+          Redirecting to crypto checkout…{" "}
+          <a href={cryptoUrl} className="underline">Click here if not redirected</a>
         </p>
       ) : null}
 
@@ -112,24 +191,41 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
-            <button
-              type="button"
-              onClick={() => subscribe(tier.id)}
-              disabled={loadingTier !== null}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-60 ${
-                tier.highlighted
-                  ? "bg-foreground text-background hover:opacity-90"
-                  : "border border-foreground/20 hover:bg-foreground/5"
-              }`}
-            >
-              {loadingTier === tier.id ? "Redirecting…" : "Subscribe"}
-            </button>
+            {paymentTab === "card" ? (
+              <button
+                type="button"
+                onClick={() => subscribe(tier.id)}
+                disabled={loadingTier !== null}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-60 ${
+                  tier.highlighted
+                    ? "bg-foreground text-background hover:opacity-90"
+                    : "border border-foreground/20 hover:bg-foreground/5"
+                }`}
+              >
+                {loadingTier === tier.id ? "Redirecting…" : "Subscribe"}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => getCryptoPaymentLink(tier.id)}
+                disabled={cryptoLoading}
+                className={`rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-60 ${
+                  tier.highlighted
+                    ? "bg-foreground text-background hover:opacity-90"
+                    : "border border-foreground/20 hover:bg-foreground/5"
+                }`}
+              >
+                {cryptoLoading ? "Getting link…" : "Get Crypto Payment Link"}
+              </button>
+            )}
           </div>
         ))}
       </section>
 
       <p className="text-foreground/50 text-xs">
-        Have a promo code? Enter it on the checkout page.
+        {paymentTab === "card"
+          ? "Have a promo code? Enter it on the checkout page."
+          : "Crypto payments powered by Dynamic Flow — pay from any chain or token."}
       </p>
     </main>
   );

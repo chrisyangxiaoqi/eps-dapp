@@ -64,6 +64,16 @@ export interface ClaimableRequest {
    * instead of re-sending.
    */
   txSignature: string | null;
+  /**
+   * The case caption (legal title of the case). Used by the Hedera integration
+   * to label the HCS message and HTS NFT (Phase 3).
+   */
+  caseCaption: string;
+  /**
+   * The ENS name of the serving agent, if resolved (Phase 2).
+   * Stored on the row at intake and forwarded to Hedera as `servedBy`.
+   */
+  agentENSName: string | null;
 }
 
 /**
@@ -145,6 +155,8 @@ export async function claimNext(deps: WorkerDeps): Promise<ClaimableRequest | nu
       noticeToken: true,
       documentSha256: true,
       txSignature: true,
+      caseCaption: true,
+      agentENSName: true,
     },
   });
   if (!candidate) return null;

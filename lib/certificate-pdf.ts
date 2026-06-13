@@ -28,6 +28,14 @@ interface CertificateData {
   noticeToken: string | null;
   firstViewedAt: Date | null;
   firstViewerIp: string | null;
+  // Hedera fields (Phase 3)
+  hcsTopicId: string | null;
+  hcsSequenceNumber: number | null;
+  hcsConsensusTime: string | null;
+  hcsMirrorUrl: string | null;
+  htsTokenId: string | null;
+  htsSerialNumber: number | null;
+  htsMirrorUrl: string | null;
 }
 
 /** A4 page size in PDF points. */
@@ -63,6 +71,13 @@ export async function generateCertificatePdf(noticeId: string): Promise<Uint8Arr
       slot: true,
       blockTime: true,
       noticeToken: true,
+      hcsTopicId: true,
+      hcsSequenceNumber: true,
+      hcsConsensusTime: true,
+      hcsMirrorUrl: true,
+      htsTokenId: true,
+      htsSerialNumber: true,
+      htsMirrorUrl: true,
       addendum: { select: { viewedAt: true, viewerIp: true } },
     },
   });
@@ -83,6 +98,13 @@ export async function generateCertificatePdf(noticeId: string): Promise<Uint8Arr
     noticeToken: notice.noticeToken,
     firstViewedAt: notice.addendum?.viewedAt ?? null,
     firstViewerIp: notice.addendum?.viewerIp ?? null,
+    hcsTopicId: notice.hcsTopicId,
+    hcsSequenceNumber: notice.hcsSequenceNumber,
+    hcsConsensusTime: notice.hcsConsensusTime,
+    hcsMirrorUrl: notice.hcsMirrorUrl,
+    htsTokenId: notice.htsTokenId,
+    htsSerialNumber: notice.htsSerialNumber,
+    htsMirrorUrl: notice.htsMirrorUrl,
   });
 }
 
@@ -141,6 +163,27 @@ export async function renderCertificatePdf(
     writer.field("Viewer IP (masked)", data.firstViewerIp ?? "—");
   } else {
     writer.field("Status", "Not yet viewed");
+  }
+
+  if (data.hcsTopicId) {
+    writer.gap();
+    writer.section("Hedera Consensus Service Timestamp");
+    writer.field("Topic ID", data.hcsTopicId);
+    writer.field("Sequence number", data.hcsSequenceNumber != null ? String(data.hcsSequenceNumber) : "—");
+    writer.field("Consensus time (UTC)", data.hcsConsensusTime ?? "—");
+    if (data.hcsMirrorUrl) {
+      writer.link("Verify on mirror node", data.hcsMirrorUrl);
+    }
+  }
+
+  if (data.htsTokenId) {
+    writer.gap();
+    writer.section("Hedera Proof of Service NFT");
+    writer.field("Token ID", data.htsTokenId);
+    writer.field("Serial number", data.htsSerialNumber != null ? String(data.htsSerialNumber) : "—");
+    if (data.htsMirrorUrl) {
+      writer.link("NFT on mirror node", data.htsMirrorUrl);
+    }
   }
 
   writer.footer(`Certificate generated ${formatUtc(new Date())}`);
