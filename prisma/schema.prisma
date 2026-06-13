@@ -132,12 +132,6 @@ model ServiceRequest {
   /// The generated certificate PDF (T-403), stored once and served on demand.
   certificatePdf  CertificatePdf?
 
-
-
-  // ENS fields (Phase 2)
-  ensDisplayName     String?   // e.g. "defendant.eth"
-  agentENSName       String?   // e.g. "eps-agent.eth"
-
   @@index([orgId])
   // The worker claims rows by status (STAGED/IN_PROGRESS), and the dashboard
   // lists an org's requests newest-first â index both for those hot paths (T107).
