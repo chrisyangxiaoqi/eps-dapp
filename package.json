@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:e2e": "playwright test",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:migrate": "prisma migrate dev",
@@ -38,6 +39,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4.3.1",
     "@types/node": "^20.19.0",
     "@types/react": "^19.2.0",
