@@ -1,0 +1,15 @@
+# .gitleaksignore — suppress confirmed false positives (T-510).
+# Each entry is a gitleaks finding fingerprint: {file}:{rule}:{startline}
+# (the --no-git fingerprint form). All entries below are test fixtures or
+# non-secret config keys, NOT real credentials. Verified in issue T-510.
+#
+# Notice-token test fixtures (obviously fake 32-hex constants used by unit /
+# integration tests; not API keys despite matching the generic-api-key rule):
+__tests__/worker/post-confirm-verify.test.ts:generic-api-key:52
+tests/integration/worker-resume.integration.test.ts:generic-api-key:23
+tests/unit/certificate-pdf.test.ts:generic-api-key:63
+tests/integration/worker.integration.test.ts:generic-api-key:85
+tests/unit/notice-page.test.ts:generic-api-key:48
+# Stripe coupon *key* (an internal identifier "eps_earlyadopter50", not a
+# secret API key — Stripe coupon keys are not credentials):
+scripts/stripe-bootstrap.ts:generic-api-key:33
