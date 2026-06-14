@@ -1,26 +1,60 @@
 {
   "status": "confirmed",
   "network": "testnet",
-  "generatedAt": "2026-06-14T10:15:03.210Z",
+  "generatedAt": "2026-06-14T11:11:25.000Z",
   "hcs": {
     "topicId": "0.0.9225885",
-    "txId": "0.0.9225630@1781432099.756944239",
-    "sequenceNumber": 7,
-    "hashscanUrl": "https://hashscan.io/testnet/topic/0.0.9225885",
-    "txUrl": "https://hashscan.io/testnet/transaction/0.0.9225630-1781432099-756944239"
+    "txId": "0.0.9225630@1781435471.227140175",
+    "sequenceNumber": 9,
+    "messageCount": 9
   },
   "hts": {
     "tokenId": "0.0.9225911",
-    "serial": 2,
-    "transferTx": "0.0.9225630@1781432102.166779482",
-    "hashscanUrl": "https://hashscan.io/testnet/token/0.0.9225911",
-    "txUrl": "https://hashscan.io/testnet/transaction/0.0.9225630-1781432102-166779482"
+    "serial": 3,
+    "transferTx": "0.0.9225630@1781435478.750634347",
+    "metadataUri": "https://eps-dapp.vercel.app/api/nft/meta?topic=0.0.9225885&seq=9",
+    "imageUri": "https://eps-dapp.vercel.app/api/nft/image?topic=0.0.9225885&seq=9",
+    "hashscan": "https://hashscan.io/testnet/token/0.0.9225911/3"
   },
   "ens": {
     "name": "youhavebeenserved.eth",
     "address": "0xd116A147A95f406a4A4F589c44d588cfE58ef6E0",
     "agentHasENSIdentity": true,
     "ensip25Compliant": true,
-    "ensip26Compliant": false
-  }
+    "sharedKey": "Hedera operator 0.0.9225630 EVM address matches youhavebeenserved.eth - one ECDSA key, two chains"
+  },
+  "nftAttributes": [
+    {
+      "trait_type": "App",
+      "value": "EPS - E-Process Server"
+    },
+    {
+      "trait_type": "HCS Topic",
+      "value": "0.0.9225885"
+    },
+    {
+      "trait_type": "HCS Sequence",
+      "value": "9"
+    },
+    {
+      "trait_type": "Agent ENS",
+      "value": "youhavebeenserved.eth"
+    },
+    {
+      "trait_type": "Agent Address",
+      "value": "0xd116A147A95f406a4A4F589c44d588cfE58ef6E0"
+    },
+    {
+      "trait_type": "Standard",
+      "value": "ENSIP-25 / ENSIP-26"
+    },
+    {
+      "trait_type": "Network",
+      "value": "Hedera Testnet"
+    },
+    {
+      "trait_type": "Type",
+      "value": "Proof of Service NFT"
+    }
+  ]
 }
