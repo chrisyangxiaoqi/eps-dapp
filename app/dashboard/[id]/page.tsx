@@ -40,16 +40,20 @@ function Detail({ label, value }: { label: string; value: string }) {
 export default async function ServiceDetailPage({ params }: PageProps) {
   const { id } = await params;
 
-  // userId/orgId come from the verified Clerk session token, never the client.
-  const { userId, orgId } = await auth();
+  // userId comes from the verified Clerk session token, never the client.
+  const { userId } = await auth();
   if (!userId) {
     redirect("/sign-in");
   }
 
-  // Scope the lookup to the caller's active org: a request owned by another org
-  // resolves to null and renders as 404 — never another org's confidential filing.
+  // Scope the lookup to the caller's own Clerk user id — the same owner scope the
+  // dashboard list uses (issue #112). Scoping to the active org instead 404'd
+  // every detail link for filers with no active organization (or whose request
+  // predates org assignment), even though the row appears on their own dashboard
+  // (issue #157). A request owned by someone else resolves to null → 404, so a
+  // user still never sees another filer's confidential filing.
   const service = await prisma.serviceRequest.findFirst({
-    where: { id, organization: { clerkOrgId: orgId ?? "" } },
+    where: { id, userId },
     include: { certificatePdf: { select: { id: true } } },
   });
 
@@ -78,9 +82,15 @@ export default async function ServiceDetailPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-12">
-      <div>
+      <div className="flex items-center justify-between gap-4">
         <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">
           ← Back to Dashboard
+        </Link>
+        <Link
+          href="/dashboard/new"
+          className="rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          New service
         </Link>
       </div>
 
