@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { verifyAgentKitAvailable } from "@/lib/hedera/HederaAgentKit";
 
+// Never cache this probe: the `timestamp` must be regenerated on every request so
+// judges see a live, advancing value rather than a build-time/static snapshot.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * GET /api/hedera/status — unauthenticated Hedera connectivity probe.
  *
@@ -45,7 +50,13 @@ export async function GET() {
 
   if (missing.length > 0) {
     return NextResponse.json(
-      { connected: false, error: "missing env vars", missing, agentKitAvailable },
+      {
+        connected: false,
+        error: "missing env vars",
+        missing,
+        agentKitAvailable,
+        timestamp: new Date().toISOString(),
+      },
       { status: 200 },
     );
   }
