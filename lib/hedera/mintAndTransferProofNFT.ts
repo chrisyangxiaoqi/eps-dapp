@@ -119,18 +119,16 @@ export async function mintAndTransferProofNFT(
     // (2) Mint one NFT carrying the EPS proof metadata.
     //
     // Hedera HTS caps NFT metadata at 100 bytes — a full JSON blob overflows it
-    // and the mint receipt comes back METADATA_TOO_LONG. The complete proof
-    // payload already lives in the HCS consensus message this NFT anchors to, so
-    // the on-chain metadata only needs a compact pointer back to it:
-    //   EPS|<caseId>|<hcsTopicId>|<hcsSequenceNumber>
-    // e.g. "EPS|bounty-proof|0.0.9225630|5" (~30 bytes). A hard truncation guard
-    // keeps us under the cap even if a future caseId is unexpectedly long.
-    const hcsTopic = meta.hcsTopicId ?? process.env.HEDERA_HCS_TOPIC_ID ?? "";
-    const hcsSeq = meta.hcsSequenceNumber ?? "";
-    let metadata = Buffer.from(
-      `EPS|${meta.caseId}|${hcsTopic}|${hcsSeq}`,
-      "utf8",
-    );
+    // and the mint receipt comes back METADATA_TOO_LONG. Per the HTS / wallet
+    // convention the on-chain metadata is a URI pointing to a JSON document;
+    // HashScan fetches it to render the certificate image + attributes for the
+    // judge view (issue #161). The URL is ~62 bytes, comfortably under the cap,
+    // and a hard truncation guard keeps us safe even if topic/seq grow.
+    const hcsTopic = meta.hcsTopicId ?? process.env.HEDERA_HCS_TOPIC_ID ?? "0.0.9225885";
+    const hcsSeq = meta.hcsSequenceNumber ?? 0;
+    const metaUri =
+      "https://eps-dapp.vercel.app/api/nft/meta?topic=" + hcsTopic + "&seq=" + hcsSeq;
+    let metadata = Buffer.from(metaUri, "utf8");
     if (metadata.length > 100) {
       metadata = metadata.subarray(0, 100);
     }
