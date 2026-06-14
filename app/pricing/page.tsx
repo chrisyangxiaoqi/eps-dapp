@@ -216,6 +216,23 @@ export default function PricingPage() {
               >
                 {loadingTier === tier.id ? "Redirecting…" : "Subscribe"}
               </button>
+            ) : DEMO_MODE ? (
+              <div className="flex flex-col gap-2">
+                <p className="text-foreground/60 text-xs">
+                  Demo mode — crypto payments via Dynamic. Click to continue.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => router.push("/dashboard?paid=demo")}
+                  className={`rounded-lg px-4 py-2 text-sm font-medium transition disabled:opacity-60 ${
+                    tier.highlighted
+                      ? "bg-foreground text-background hover:opacity-90"
+                      : "border border-foreground/20 hover:bg-foreground/5"
+                  }`}
+                >
+                  Continue
+                </button>
+              </div>
             ) : (
               <button
                 type="button"
