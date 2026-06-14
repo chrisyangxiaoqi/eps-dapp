@@ -76,6 +76,21 @@ export default async function ServiceDetailPage({ params }: PageProps) {
     ? `https://explorer.solana.com/tx/${service.txSignature}?cluster=devnet`
     : null;
 
+  // HashScan topic link for the Hedera Consensus Service message anchored at
+  // intake (Section 4). Built from the stored topic id, deep-linked to the
+  // specific message when its sequence number was recorded.
+  const hcsTopicLink = service.hcsTopicId
+    ? `https://hashscan.io/testnet/topic/${service.hcsTopicId}` +
+      (service.hcsSequenceNumber != null ? `/message/${service.hcsSequenceNumber}` : "")
+    : null;
+
+  // HashScan token link for the HTS proof-of-service NFT (Section 5).
+  const htsTokenLink = service.htsTokenId
+    ? `https://hashscan.io/testnet/token/${service.htsTokenId}`
+    : null;
+
+  const hasBlockchainProof = !!(service.hcsTopicId || service.htsTokenId);
+
   return (
     <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-6 py-12">
       <div>
@@ -99,6 +114,61 @@ export default async function ServiceDetailPage({ params }: PageProps) {
           <Detail label="Created" value={created} />
         </dl>
       </section>
+
+      {/* Blockchain proof — Hedera HCS consensus timestamp + HTS proof-of-service
+          NFT, anchored at intake (Sections 4 & 5). Shown for any status once the
+          proof exists so judges can verify it on HashScan immediately. */}
+      {hasBlockchainProof ? (
+        <section className="flex flex-col gap-3 rounded-xl border border-foreground/10 bg-foreground/[0.02] p-6">
+          <div className="flex items-center gap-2">
+            <span aria-hidden>🔗</span>
+            <h2 className="text-lg font-semibold">Blockchain Proof</h2>
+          </div>
+          <p className="text-foreground/70 text-sm">
+            This request is anchored on the Hedera Consensus Service, producing an immutable,
+            independently verifiable proof. EPS facilitates service and generates court-ready proof.
+          </p>
+          <dl className="grid gap-4 sm:grid-cols-2">
+            {service.hcsTopicId ? (
+              <Detail label="HCS topic" value={service.hcsTopicId} />
+            ) : null}
+            {service.hcsSequenceNumber != null ? (
+              <Detail label="HCS sequence #" value={String(service.hcsSequenceNumber)} />
+            ) : null}
+            {service.hcsConsensusTime ? (
+              <Detail label="Consensus time" value={service.hcsConsensusTime} />
+            ) : null}
+            {service.htsTokenId ? (
+              <Detail label="NFT token id" value={service.htsTokenId} />
+            ) : null}
+            {service.htsSerialNumber != null ? (
+              <Detail label="NFT serial #" value={String(service.htsSerialNumber)} />
+            ) : null}
+          </dl>
+          <div className="flex flex-col gap-2">
+            {hcsTopicLink ? (
+              <a
+                href={hcsTopicLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline"
+              >
+                View HCS proof on HashScan ↗
+              </a>
+            ) : null}
+            {htsTokenLink ? (
+              <a
+                href={htsTokenLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline"
+              >
+                View proof-of-service NFT on HashScan ↗
+              </a>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       {/* Status-conditional action area. */}
       {service.status === "STAGED" ? (

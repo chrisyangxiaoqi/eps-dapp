@@ -5,11 +5,8 @@ export default function DemoBanner() {
       className="sticky top-0 z-50 flex items-center justify-center gap-2 bg-yellow-400 px-4 py-2 text-center text-sm font-semibold text-yellow-900"
       role="alert"
     >
-      <span>warning</span>
-      <span>
-        Testnet demo - no real legal proceedings are initiated. Hedera HCS
-        testnet only.
-      </span>
+      <span aria-hidden>⚠️</span>
+      <span>Demo Mode — Hedera testnet, no real payments</span>
     </div>
   );
 }

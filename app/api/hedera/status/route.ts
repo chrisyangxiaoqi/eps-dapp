@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { verifyAgentKitAvailable } from "@/lib/hedera/HederaAgentKit";
 
 /**
  * GET /api/hedera/status — unauthenticated Hedera connectivity probe.
@@ -38,9 +39,13 @@ export async function GET() {
   if (!operatorKey) missing.push("HEDERA_OPERATOR_KEY");
   if (!topicId) missing.push("HEDERA_HCS_TOPIC_ID");
 
+  // HederaAgentKit availability is independent of operator credentials (it's a
+  // package/exports check), so report it regardless of the missing-env branch.
+  const agentKitAvailable = await verifyAgentKitAvailable();
+
   if (missing.length > 0) {
     return NextResponse.json(
-      { connected: false, error: "missing env vars", missing },
+      { connected: false, error: "missing env vars", missing, agentKitAvailable },
       { status: 200 },
     );
   }
@@ -51,6 +56,7 @@ export async function GET() {
       topicId,
       operatorId: maskOperatorId(operatorId!),
       connected: true,
+      agentKitAvailable,
       timestamp: new Date().toISOString(),
     },
     { status: 200 },

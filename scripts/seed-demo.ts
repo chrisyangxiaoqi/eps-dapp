@@ -6,10 +6,11 @@
 // Usage:
 //   pnpm tsx scripts/seed-demo.ts --userId=user_xxxxxxxxxxxxxxxxxxxxx
 //   SEED_USER_ID=user_xxxxxxxxxxxxxxxxxxxxx pnpm tsx scripts/seed-demo.ts
+//   DEMO_USER_ID=user_xxxxxxxxxxxxxxxxxxxxx pnpm tsx scripts/seed-demo.ts
 //
 // The userId is resolved (in order) from:
 //   1. the --userId=<id> CLI argument
-//   2. the SEED_USER_ID environment variable
+//   2. the SEED_USER_ID or DEMO_USER_ID environment variable
 //   3. a placeholder constant below — REPLACE THIS with the real Clerk userId of
 //      the account you'll sign in as during the demo. Find it in the Clerk
 //      dashboard (Users → the user → "User ID", looks like `user_...`).
@@ -34,6 +35,7 @@ function resolveUserId(): string {
   const cliArg = process.argv.find((a) => a.startsWith('--userId='));
   if (cliArg) return cliArg.slice('--userId='.length);
   if (process.env.SEED_USER_ID) return process.env.SEED_USER_ID;
+  if (process.env.DEMO_USER_ID) return process.env.DEMO_USER_ID;
   return PLACEHOLDER_USER_ID;
 }
 
@@ -53,10 +55,17 @@ const demoRequests = [
     slot: BigInt(287654321),
     blockTime: new Date('2026-06-13T18:00:00Z'),
     documentSha256: 'a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2',
-    // Hedera proof (Phase 3) — present on a fully-delivered notice.
-    hcsTxId: '0.0.12345@1718340000.000000000',
-    hcsTopicId: '0.0.12345',
-    hcsMirrorUrl: 'https://hashscan.io/testnet/transaction/0.0.12345@1718340000.000000000',
+    // Hedera proof (Phase 3) — present on a fully-delivered notice. Topic id
+    // matches the live demo topic (0.0.9225885) so the Blockchain Proof panel
+    // deep-links to the real HashScan topic; HTS fields populate the NFT receipt.
+    hcsTxId: '0.0.9225885@1718340000.000000000',
+    hcsTopicId: '0.0.9225885',
+    hcsSequenceNumber: 1,
+    hcsConsensusTime: '2026-06-13T18:00:01.000Z',
+    hcsMirrorUrl: 'https://hashscan.io/testnet/topic/0.0.9225885/message/1',
+    htsTokenId: '0.0.9225999',
+    htsSerialNumber: 1,
+    htsMirrorUrl: 'https://hashscan.io/testnet/token/0.0.9225999',
     ensDisplayName: 'smith.eth',
     attestedAt: new Date('2026-06-13T17:55:00Z'),
   },

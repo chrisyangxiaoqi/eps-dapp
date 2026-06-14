@@ -82,7 +82,9 @@ export default function NewServiceRequestPage() {
         const data: (ENSResolution & { error?: string }) = await res.json();
         if (!res.ok || !data.address) {
           setResolvedAddress(null);
-          setEnsError("Could not resolve ENS name");
+          setEnsError(
+            "Could not verify this ENS name right now — you can still submit; the server will re-resolve it.",
+          );
         } else {
           setResolvedAddress(data.address);
           setEnsError(null);
@@ -90,7 +92,9 @@ export default function NewServiceRequestPage() {
       } catch (err) {
         if (err instanceof DOMException && err.name === "AbortError") return;
         setResolvedAddress(null);
-        setEnsError("Could not resolve ENS name");
+        setEnsError(
+          "Could not verify this ENS name right now — you can still submit; the server will re-resolve it.",
+        );
       } finally {
         // Don't flip off the spinner for a request we just aborted — its
         // replacement is already starting and owns the loading state.
@@ -232,7 +236,10 @@ export default function NewServiceRequestPage() {
                 <span aria-hidden>✓</span>
               </p>
             ) : ensError ? (
-              <p className="text-xs text-red-700">{ensError}</p>
+              <p className="flex items-start gap-1 rounded-md bg-yellow-50 px-2 py-1 text-xs text-yellow-800">
+                <span aria-hidden>⚠️</span>
+                <span>{ensError}</span>
+              </p>
             ) : null}
           </div>
         </Field>
