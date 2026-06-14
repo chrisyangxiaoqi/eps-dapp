@@ -118,28 +118,22 @@ export async function mintAndTransferProofNFT(
 
     // (2) Mint one NFT carrying the EPS proof metadata.
     //
-    // Hedera HTS caps NFT metadata at 100 bytes — a full JSON blob overflows it
-    // and the mint receipt comes back METADATA_TOO_LONG. Per the HTS / wallet
-    // convention the on-chain metadata is a URI pointing to a JSON document;
-    // HashScan fetches it to render the certificate image + attributes for the
-    // judge view (issue #161). The URL is ~62 bytes, comfortably under the cap,
-    // and a hard truncation guard keeps us safe even if topic/seq grow.
+    // Hedera HTS caps NFT metadata at 100 bytes.  Use a compact on-chain format
+    // ("EPS:HCS_TOPIC:SEQ") that is guaranteed to fit.  The full certificate is
+    // resolved off-chain via the HCS topic + sequence number.
     const hcsTopic = meta.hcsTopicId ?? process.env.HEDERA_HCS_TOPIC_ID ?? "0.0.9225885";
     const hcsSeq = meta.hcsSequenceNumber ?? 0;
-    const metaUri =
-      "https://eps-dapp.vercel.app/api/nft/meta?topic=" + hcsTopic + "&seq=" + hcsSeq;
-    let metadata = Buffer.from(metaUri, "utf8");
+    const shortMeta = "EPS:" + hcsTopic + ":" + hcsSeq;
+    let metadata = Buffer.from(shortMeta, "utf8");
+    // Hard safety clamp — must never exceed 100 bytes.
     if (metadata.length > 100) {
-      metadata = metadata.subarray(0, 100);
+      metadata = Buffer.from("EPS:" + String(hcsSeq));
     }
     const mintTx = await new TokenMintTransaction()
       .setTokenId(tokenId)
       .addMetadata(metadata)
       .freezeWith(client)
       .sign(operatorKey);
-    const mintReceipt = await (await mintTx.execute(client)).getReceipt(client);
-    const serial = mintReceipt.serials?.[0]?.toNumber();
-    if (serial == null) throw new Error("Mint returned no serial number.");
 
     // (3) Resolve the defendant account. A configured account is reused as-is
     // (it must have an open auto-association slot or already be associated). When
