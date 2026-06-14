@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
   let nftTokenId: string | null = null;
   let nftSerial: number | null = null;
   let nftTransferTx: string | null = null;
+  let mintError: string | null = null;
   try {
     const nft = await mintAndTransferProofNFT({
       caseId: "bounty-proof",
@@ -104,6 +105,7 @@ export async function POST(req: NextRequest) {
     }
   } catch (err) {
     console.error("[run-proof] NFT mint/transfer failed (returning HCS-only proof):", err);
+    mintError = err instanceof Error ? err.message : String(err);
   }
 
   return NextResponse.json({
@@ -112,6 +114,7 @@ export async function POST(req: NextRequest) {
     nftTokenId,
     nftSerial,
     nftTransferTx,
+    mintError,
     timestamp,
   });
 }
