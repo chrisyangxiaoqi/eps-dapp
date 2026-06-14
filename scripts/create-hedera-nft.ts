@@ -20,6 +20,7 @@ import {
   Client,
   PrivateKey,
   TokenCreateTransaction,
+  TokenMintTransaction,
   TokenType,
   TokenSupplyType,
 } from '@hashgraph/sdk';
@@ -63,9 +64,36 @@ async function main() {
     const tokenId = receipt.tokenId?.toString();
 
     console.log(`\n✓ NFT collection created: ${tokenId}`);
+
+    // Mint serial #1 so the run proves a real HTS mint (not just token creation).
+    // Metadata must be ≤ 100 bytes per serial — keep it a short proof tag.
+    const network = isMainnet ? 'mainnet' : 'testnet';
+    const metadata = new TextEncoder().encode(
+      JSON.stringify({ eps: 'v1', proof: 'eps-bounty', mintedAt: new Date().toISOString() }).slice(0, 100),
+    );
+    const mintResponse = await new TokenMintTransaction()
+      .setTokenId(receipt.tokenId!)
+      .addMetadata(metadata)
+      .execute(client);
+    const mintReceipt = await mintResponse.getReceipt(client);
+    const serialNumber = mintReceipt.serials?.[0]?.toString() ?? '1';
+
+    console.log(`✓ Minted serial #${serialNumber} (tx ${mintResponse.transactionId.toString()})`);
+
+    // Emit a machine-readable proof line so CI can extract the values from logs.
+    console.log(
+      `EPS_HTS_PROOF=${JSON.stringify({
+        network,
+        htsTokenId: tokenId,
+        serialNumber,
+        mintTransactionId: mintResponse.transactionId.toString(),
+        hashscanNFT: `https://hashscan.io/${network}/token/${tokenId}`,
+      })}`,
+    );
+
     console.log(`\nAdd this to Vercel env:`);
     console.log(`  HEDERA_NFT_TOKEN_ID=${tokenId}`);
-    console.log(`\nView: https://hashscan.io/${isMainnet ? 'mainnet' : 'testnet'}/token/${tokenId}`);
+    console.log(`\nView: https://hashscan.io/${network}/token/${tokenId}`);
   } finally {
     client.close();
   }
