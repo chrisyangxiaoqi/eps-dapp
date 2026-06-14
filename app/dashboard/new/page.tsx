@@ -232,7 +232,11 @@ export default function NewServiceRequestPage() {
                 <span aria-hidden>✓</span>
               </p>
             ) : ensError ? (
-              <p className="text-xs text-red-700">{ensError}</p>
+              // Soft warning, not a hard block (Section 1): the server re-resolves
+              // the name authoritatively at submit, so the filer can still proceed.
+              <p className="text-xs text-yellow-700">
+                ⚠️ {ensError}. You can still submit — we&apos;ll re-check this name on the server.
+              </p>
             ) : null}
           </div>
         </Field>
