@@ -56,6 +56,7 @@ export default async function DashboardPage() {
                 <th className="px-3 py-2 font-semibold">Status</th>
                 <th className="px-3 py-2 font-semibold">Notice</th>
                 <th className="px-3 py-2 font-semibold">Certificate</th>
+                <th className="px-3 py-2 font-semibold">Details</th>
               </tr>
             </thead>
             <tbody>
@@ -71,7 +72,14 @@ export default async function DashboardPage() {
 
                 return (
                   <tr key={service.id} className="border-b border-gray-200">
-                    <td className="px-3 py-2">{service.caseCaption}</td>
+                    <td className="px-3 py-2">
+                      <Link
+                        href={`/dashboard/${service.id}`}
+                        className="text-blue-400 hover:underline"
+                      >
+                        {service.caseCaption}
+                      </Link>
+                    </td>
                     <td className="px-3 py-2">{service.noticeToken ?? "—"}</td>
                     <td className="px-3 py-2">{status}</td>
                     <td className="px-3 py-2">
@@ -97,6 +105,14 @@ export default async function DashboardPage() {
                       ) : (
                         "—"
                       )}
+                    </td>
+                    <td className="px-3 py-2">
+                      <Link
+                        href={`/dashboard/${service.id}`}
+                        className="text-blue-400 text-sm hover:underline"
+                      >
+                        View →
+                      </Link>
                     </td>
                   </tr>
                 );
