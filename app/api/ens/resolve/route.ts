@@ -1,29 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { resolveENS } from '@/lib/ens/ENSResolver';
-import { rateLimit, clientKey, rateLimitHeaders } from '@/lib/rate-limit';
+import { NextResponse } from 'next/server'
+import { createPublicClient, http } from 'viem'
+import { mainnet } from 'viem/chains'
+import { normalize } from 'viem/ens'
 
-// Resolution fans out to an external RPC; cap callers at 60/min/IP (T107) to
-// protect that upstream quota from a hot loop or scraper.
-const RESOLVE_LIMIT = { limit: 60, windowMs: 60_000 };
+const client = createPublicClient({
+  chain: mainnet,
+  transport: http(
+    process.env.NEXT_PUBLIC_ALCHEMY_URL ??
+    'https://eth-mainnet.g.alchemy.com/v2/demo'
+  ),
+})
 
-export async function GET(req: NextRequest) {
-  const rl = rateLimit(`ens-resolve:${clientKey(req)}`, RESOLVE_LIMIT);
-  if (!rl.ok) {
-    return NextResponse.json(
-      { error: 'Rate limit exceeded. Try again shortly.' },
-      { status: 429, headers: rateLimitHeaders(rl) },
-    );
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url)
+  const raw = (searchParams.get('name') ?? searchParams.get('q') ?? '').trim()
+
+  if (!raw || raw.length < 3) {
+    return NextResponse.json({ error: 'input required, min 3 chars' }, { status: 400 })
   }
 
-  const input = req.nextUrl.searchParams.get('input')?.trim();
-  if (!input || input.length < 3) {
-    return NextResponse.json({ error: 'input required, min 3 chars' }, { status: 400 });
+  if (!raw.includes('.')) {
+    return NextResponse.json({ error: 'must be a valid ENS name e.g. vitalik.eth' }, { status: 400 })
   }
+
   try {
-    const result = await resolveENS(input);
-    return NextResponse.json(result);
+    const name = normalize(raw)
+    const address = await client.getEnsAddress({ name })
+    if (!address) {
+      return NextResponse.json({ error: 'name not found or not registered' }, { status: 404 })
+    }
+    return NextResponse.json({ name: raw, address })
   } catch (err) {
-    console.error('[ENS resolve]', err);
-    return NextResponse.json({ error: 'Resolution failed' }, { status: 500 });
+    const msg = err instanceof Error ? err.message : 'resolution failed'
+    return NextResponse.json({ error: msg }, { status: 500 })
   }
 }
