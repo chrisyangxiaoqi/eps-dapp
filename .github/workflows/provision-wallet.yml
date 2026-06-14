@@ -13,6 +13,8 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --no-frozen-lockfile
+      - name: Inspect dynamic-labs-wallet exports
+        run: node -e "const m = require('@dynamic-labs-wallet/node'); console.log('EXPORTS:', Object.keys(m).join(', '));"
       - name: Create agent wallet
         env:
           DYNAMIC_BEARER_TOKEN: dyn_aSQYijSHt3aXBntDhYUj0BkMnj7bSBys9xUO29FOGihzpSSces1Pvt3L
