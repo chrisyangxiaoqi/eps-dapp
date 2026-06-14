@@ -20,7 +20,7 @@ model Health {
 }
 
 /// A Clerk organization (the billable tenant). `clerkOrgId` is the verified
-/// org id from the Clerk session token â never accepted from the client.
+/// org id from the Clerk session token Ã¢ÂÂ never accepted from the client.
 model Organization {
   id              String           @id @default(uuid())
   clerkOrgId      String           @unique
@@ -64,10 +64,10 @@ model WebhookEvent {
 }
 
 /// Lifecycle of a service request as it moves from intake through chain delivery.
-///  - STAGED      â created at intake (T-203), quota decremented, awaiting fulfilment.
-///  - IN_PROGRESS â the worker has picked it up and is delivering on-chain (P3).
-///  - CONFIRMED   â transaction finalized and re-read verified (P3).
-///  - FAILED      â delivery failed; quota restored, surfaced on the dashboard (P3).
+///  - STAGED      Ã¢ÂÂ created at intake (T-203), quota decremented, awaiting fulfilment.
+///  - IN_PROGRESS Ã¢ÂÂ the worker has picked it up and is delivering on-chain (P3).
+///  - CONFIRMED   Ã¢ÂÂ transaction finalized and re-read verified (P3).
+///  - FAILED      Ã¢ÂÂ delivery failed; quota restored, surfaced on the dashboard (P3).
 enum ServiceStatus {
   STAGED
   IN_PROGRESS
@@ -81,7 +81,7 @@ enum ServiceStatus {
 /// (`txSignature`, `slot`, `blockTime`). `recipientWallet` is a validated,
 /// on-curve Solana address (see `lib/solana/validate-address.ts`). `attestedAt`
 /// records when the filer attested to the accuracy of the caption. The caption
-/// fields are confidential legal-filing metadata â never logged (hard rule #3).
+/// fields are confidential legal-filing metadata Ã¢ÂÂ never logged (hard rule #3).
 model ServiceRequest {
   id              String        @id @default(uuid())
   orgId           String
@@ -103,7 +103,7 @@ model ServiceRequest {
   blockTime       DateTime?
   /// Human-readable reason a delivery terminally failed (send error, memo
   /// mismatch, timeout). Surfaced on the dashboard's FAILED rows (T-306). Holds
-  /// only error/diagnostic text â never document or caption bytes (hard rule #3).
+  /// only error/diagnostic text Ã¢ÂÂ never document or caption bytes (hard rule #3).
   failureReason   String?
   createdAt       DateTime      @default(now())
 
@@ -133,14 +133,9 @@ model ServiceRequest {
   certificatePdf  CertificatePdf?
 
 
-
-  // ENS fields (Phase 2)
-  ensDisplayName     String?   // e.g. "defendant.eth"
-  agentENSName       String?   // e.g. "eps-agent.eth"
-
   @@index([orgId])
   // The worker claims rows by status (STAGED/IN_PROGRESS), and the dashboard
-  // lists an org's requests newest-first â index both for those hot paths (T107).
+  // lists an org's requests newest-first Ã¢ÂÂ index both for those hot paths (T107).
   @@index([status])
   @@index([createdAt])
   @@index([orgId, status, createdAt])
@@ -162,7 +157,7 @@ model NoticeAccess {
 
 /// "First Viewed" addendum appended to a notice's certificate (T-402). Written
 /// in the SAME transaction as the first {@link NoticeAccess} row. `viewerIp` is
-/// MASKED (last octet â `x`) â the certificate is a court-facing artefact and
+/// MASKED (last octet Ã¢ÂÂ `x`) Ã¢ÂÂ the certificate is a court-facing artefact and
 /// need not expose a full address.
 model CertificateAddendum {
   id        String         @id @default(uuid())
@@ -179,7 +174,7 @@ model CertificateAddendum {
 /// (the `noticeId` unique constraint), generated on first download and reused
 /// thereafter. The PDF bytes are stored base64-encoded in `pdfBase64`. The
 /// certificate carries only court-facing proof fields (caption, file hash,
-/// on-chain proof, first-view record) â never document or caption bytes beyond
+/// on-chain proof, first-view record) Ã¢ÂÂ never document or caption bytes beyond
 /// what the cover sheet already exposes (hard rule #3).
 model CertificatePdf {
   id          String         @id @default(uuid())
