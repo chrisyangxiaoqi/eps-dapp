@@ -38,7 +38,15 @@ export default async function DashboardPage() {
       <h1 className="mb-6 text-2xl font-bold">Your services</h1>
 
       {services.length === 0 ? (
-        <p className="text-gray-500">No services yet.</p>
+        <div className="text-gray-500">
+          <p className="mb-4">No services yet.</p>
+          <Link
+            href="/dashboard/new"
+            className="inline-block font-medium text-blue-600 hover:underline"
+          >
+            Create your first service request →
+          </Link>
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-sm">
