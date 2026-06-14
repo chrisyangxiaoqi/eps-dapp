@@ -117,16 +117,23 @@ export async function mintAndTransferProofNFT(
     }
 
     // (2) Mint one NFT carrying the EPS proof metadata.
-    const metadata = Buffer.from(
-      JSON.stringify({
-        app: "EPS",
-        agent: "youhavebeenserved.eth",
-        caseId: meta.caseId,
-        hcsTopic: meta.hcsTopicId ?? process.env.HEDERA_HCS_TOPIC_ID ?? null,
-        hcsSequenceNumber: meta.hcsSequenceNumber ?? null,
-        mintedAt: new Date().toISOString(),
-      }),
+    //
+    // Hedera HTS caps NFT metadata at 100 bytes — a full JSON blob overflows it
+    // and the mint receipt comes back METADATA_TOO_LONG. The complete proof
+    // payload already lives in the HCS consensus message this NFT anchors to, so
+    // the on-chain metadata only needs a compact pointer back to it:
+    //   EPS|<caseId>|<hcsTopicId>|<hcsSequenceNumber>
+    // e.g. "EPS|bounty-proof|0.0.9225630|5" (~30 bytes). A hard truncation guard
+    // keeps us under the cap even if a future caseId is unexpectedly long.
+    const hcsTopic = meta.hcsTopicId ?? process.env.HEDERA_HCS_TOPIC_ID ?? "";
+    const hcsSeq = meta.hcsSequenceNumber ?? "";
+    let metadata = Buffer.from(
+      `EPS|${meta.caseId}|${hcsTopic}|${hcsSeq}`,
+      "utf8",
     );
+    if (metadata.length > 100) {
+      metadata = metadata.subarray(0, 100);
+    }
     const mintTx = await new TokenMintTransaction()
       .setTokenId(tokenId)
       .addMetadata(metadata)
